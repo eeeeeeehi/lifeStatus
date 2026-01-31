@@ -2,8 +2,9 @@ import type { Scene } from "./Scene";
 import { HomeScene } from "../scenes/HomeScene";
 import { StatusScene } from "../scenes/StatusScene";
 import { LogScene } from "../scenes/LogScene";
+import { SettingsScene } from "../scenes/SettingsScene";
 
-export type SceneType = 'home' | 'status' | 'log';
+export type SceneType = 'home' | 'status' | 'log' | 'settings';
 
 export class SceneRouter {
     private container: HTMLElement;
@@ -16,7 +17,8 @@ export class SceneRouter {
         this.scenes = {
             home: new HomeScene(),
             status: new StatusScene(),
-            log: new LogScene()
+            log: new LogScene(),
+            settings: new SettingsScene()
         };
     }
 

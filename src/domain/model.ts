@@ -21,13 +21,13 @@ export type DailyActionLog = {
   doneAt?: number;
 };
 
-export type StatsKey = 
-  | "action" 
-  | "consistency" 
-  | "focus" 
-  | "planning" 
-  | "selfControl" 
-  | "learning" 
+export type StatsKey =
+  | "action"
+  | "consistency"
+  | "focus"
+  | "planning"
+  | "selfControl"
+  | "learning"
   | "social";
 
 export type CharacterState = {
@@ -45,6 +45,39 @@ export type AppState = {
   character: CharacterState;
   streak: number; // consecutive days
   seenOnboarding: boolean;
+
+  // Battle Related
+  currentBattle?: BattleState | null;
+  highScore?: number;
+};
+
+export type Enemy = {
+  id: string;
+  name: string;
+  level: number;
+  hp: number;
+  maxHp: number;
+  attack: number;
+  defense: number;
+  expReward: number;
+  image?: string; // Emoji or asset path
+};
+
+export type BattleState = {
+  isActive: boolean;
+  turn: number;
+  enemy: Enemy;
+  playerHp: number;
+  playerMaxHp: number;
+  logs: string[];
+  result?: string | null;
+};
+
+export type RankingEntry = {
+  userId: string;
+  userName: string;
+  level: number;
+  score: number; // e.g. Max dungeon floor reached or total EXP
 };
 
 // Initial State Factory
@@ -69,6 +102,8 @@ export function createInitialState(): AppState {
       lastUpdatedAt: Date.now()
     },
     streak: 0,
-    seenOnboarding: false
+    seenOnboarding: false,
+    currentBattle: null,
+    highScore: 0
   };
 }

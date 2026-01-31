@@ -17,10 +17,14 @@ export class Store {
     }
 
     async init() {
-        const loaded = await this.storage.load();
-        if (loaded) {
-            // Simple migration check could go here
-            this.state = { ...createInitialState(), ...loaded };
+        try {
+            const loaded = await this.storage.load();
+            if (loaded) {
+                // Use setState to notify listeners/UI
+                this.setState((prev) => ({ ...prev, ...loaded }));
+            }
+        } catch (e) {
+            console.error("Store load failed", e);
         }
     }
 

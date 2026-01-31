@@ -1,5 +1,5 @@
 import { store } from "./store";
-import type { ActionItem, DailyActionLog } from "../domain/model";
+import type { ActionItem, DailyActionLog, StatsKey } from "../domain/model";
 
 export function setGoal(title: string) {
     store.setState((_prev) => ({
@@ -27,26 +27,34 @@ export function addAction(title: string) {
 }
 
 export function toggleAction(actionId: string, dateStr: string) {
-    // Logic: 
-    // 1. Check if already done today
-    // 2. If not, add log.
-    // 3. If done, remove log (or mark undone).
-    // 4. Update EXP/Stats (MVP: simple addition)
-
     const state = store.getState();
     const existingLogIndex = state.logs.findIndex(l => l.actionId === actionId && l.date === dateStr);
 
     if (existingLogIndex >= 0) {
-        // Already done. MVP: Toggle off? Spec says "Best not to allow undo" but for UX we might need it.
-        // Let's allow undo but remove rewards.
-        // For now, let's just implement toggle.
+        // Undo: Revert Rewards
         const newLogs = [...state.logs];
         newLogs.splice(existingLogIndex, 1);
 
-        // Decrease EXP/Stats logic would go here if we were careful, but MVP simplified:
-        // Just remove the log state.
+        const currentChar = state.character;
+        // Revert EXP - prevent negative
+        const newExp = Math.max(0, currentChar.exp - 10);
+        // Recalculate level
+        const newLevel = Math.floor(newExp / 100) + 1;
 
-        store.setState({ logs: newLogs });
+        // Revert Stats - prevent negative
+        const newStats = { ...currentChar.stats };
+        newStats.action = Math.max(0, (newStats.action || 0) - 1);
+
+        store.setState({
+            logs: newLogs,
+            character: {
+                ...currentChar,
+                exp: newExp,
+                level: newLevel,
+                stats: newStats,
+                lastUpdatedAt: Date.now()
+            }
+        });
 
     } else {
         // Mark done
@@ -58,7 +66,7 @@ export function toggleAction(actionId: string, dateStr: string) {
             doneAt: Date.now()
         };
 
-        // Reward Logic (Simple MVP)
+        // Reward Logic
         const currentChar = state.character;
         const newExp = currentChar.exp + 10;
         const newLevel = Math.floor(newExp / 100) + 1;
@@ -66,8 +74,6 @@ export function toggleAction(actionId: string, dateStr: string) {
         // Stats: Action + 1
         const newStats = { ...currentChar.stats };
         newStats.action = (newStats.action || 0) + 1;
-
-        // Bonus logic can be added here
 
         store.setState({
             logs: [...state.logs, newLog],
@@ -79,13 +85,53 @@ export function toggleAction(actionId: string, dateStr: string) {
                 lastUpdatedAt: Date.now()
             }
         });
-
-        // Notify/Toast would be handled by UI observing state changes
     }
 }
 
+export function updateCharacterStats(bonusStats: Partial<Record<StatsKey, number>>) {
+    const state = store.getState();
+    const newStats = { ...state.character.stats };
+
+    Object.entries(bonusStats).forEach(([key, value]) => {
+        const k = key as StatsKey;
+        if (typeof newStats[k] === 'number') {
+            newStats[k] += value;
+        }
+    });
+
+    store.setState({
+        character: {
+            ...state.character,
+            stats: newStats
+        }
+    });
+}
+
+// --- Data Management ---
+
+export function exportData(): string {
+    const state = store.getState();
+    return JSON.stringify(state, null, 2);
+}
+
+export function importData(jsonString: string): boolean {
+    try {
+        const data = JSON.parse(jsonString);
+        if (!data || !data.character) throw new Error("Invalid Data");
+        store.setState(data);
+        return true;
+    } catch (e) {
+        console.error("Import failed:", e);
+        return false;
+    }
+}
+
+export function resetData() {
+    localStorage.clear();
+    location.reload();
+}
+
 export function getTodayISODate(): string {
-    // Simple YYYY-MM-DD
     const d = new Date();
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, '0');

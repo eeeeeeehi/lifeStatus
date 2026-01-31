@@ -181,3 +181,11 @@ input[type="text"]:focus {
 .nav-btn:active {
   transform: scale(0.95);
 }
+
+.nav-btn.active {
+  color: var(--color-primary);
+}
+
+.nav-btn:hover {
+  color: var(--color-text-main);
+}
